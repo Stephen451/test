@@ -1,0 +1,43 @@
+name: Build Wheel Package
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - run: git fetch --prune --unshallow --tags
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.9
+      - name: Add conda to system path
+        run: |
+          # $CONDA is an environment variable pointing to the root of the miniconda directory
+          echo $CONDA/bin >> $GITHUB_PATH
+      - name: Install poetry and setup dependencies
+        run: |
+          pip install poetry
+          poetry install
+      - name: Test with pytest
+        run: |
+          poetry run pytest
+      - name: Update project version with the latest git tagged version
+        run: |
+          bash scripts/update_pyproject_version.sh
+      - name: Build wheel package
+        run: |
+          poetry build
+      - name: Upload wheel to Pleno-pypi
+        run: |
+          pip install twine
+          twine upload --repository-url ${{ secrets.PYPI_HOST}} ${{ secrets.PYPI_ARGS}} dist/*.whl
+      - uses: actions/upload-artifact@v3
+        with:
+          name: pleno-proj
+          path: dist/*.whl
