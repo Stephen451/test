@@ -40,17 +40,20 @@ class GraphPage():
             except Exception:
                 x = [0, 1]
                 y = [0, 1]
-            # fig = Plotter(data=df, index_dims=index_dims)
-            fig = go.Figure()
-            # fig.add_trace()
-            fig.add_scatter(x = x, y = y)
+            fig = Plotter(data=df, index_dims=index_dims)
             
-            # fig = go.Figure([px.imshow(img = df.loc['D6-tile0-0', :])
-            #                  ])
-            fig.update_layout(title = 'Well Data',
-                            xaxis_title = Dim1.capitalize(),
-                            yaxis_title = dropdown_value.capitalize()
-                            )
+
+
+            # fig = go.Figure()
+            # # fig.add_trace()
+            # fig.add_scatter(x = x, y = y)
+            
+            # # fig = go.Figure([px.imshow(img = df.loc['D6-tile0-0', :])
+            # #                  ])
+            # fig.update_layout(title = 'Well Data',
+            #                 xaxis_title = Dim1.capitalize(),
+            #                 yaxis_title = dropdown_value.capitalize()
+            #                 )
 
             return fig
     

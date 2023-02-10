@@ -11,7 +11,7 @@ class Plotter:
         self.data = data
         self.index_dims = index_dims
         self.num_dims = len(index_dims)
-        self.choose_plot
+        self.choose_plot()
 
     def choose_plot(self):
         #This is where I'll include all the logic for what plots are available given the dropdown selections
@@ -22,16 +22,18 @@ class Plotter:
         elif self.num_dims == 4:
             self.plots = PLOT4D
 
-    def plot(self):
+    def plot(self, dropdown):
         fig = go.Figure()
-        fig.add_trace()
-        fig.add_scatter(x = rr.index.get_level_values(0), y = rr[dropdown_value])
-        
+        plot_type = self.plots._graphs(self.plots)[0]
+        plot_func = getattr(self.plots, plot_type)
+        for well, data in self.data.groupby(level=0):
+            fig.add_trace(plot_func(x = data.index.get_level_values(1), y = data[dropdown], name=well))
+            
         # fig = go.Figure([px.imshow(img = df.loc['D6-tile0-0', :])
         #                  ])
         fig.update_layout(title = 'Well Data',
-                        xaxis_title = Dim1.capitalize(),
-                        yaxis_title = dropdown_value.capitalize()
+                        xaxis_title = self.index_dims[0].capitalize(),
+                        yaxis_title = dropdown.capitalize()
                         )
 
         return fig

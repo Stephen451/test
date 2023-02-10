@@ -14,34 +14,47 @@ class StandardSyntax:
         df = kwargs.get('y', None)
         color = kwargs.get('color', None)
 
-class PLOT2D(str, Enum):
-    SCATTER = StandardSyntax(px.scatter)
-    BAR = px.bar
-    TABLE = ff.create_table
-    DENSITY = px.density_heatmap
-    HISTOGRAM = px.histogram
+class PLOT2D(str):
+    SCATTER = go.Scatter
+    BAR = go.Bar
+    TABLE = go.Table
+    DENSITY = go.Densitymapbox
+    HISTOGRAM = go.Histogram
     BOX = px.box
 
-    def __str__(self) -> str:
-        return self.value
+    # def __str__(self) -> str:
+    #     return self.value
 
+    def _graphs(self) -> list:
+        graphs = [i for i in vars(self) if not i.startswith("_")]
+        graphs.sort()
+        return graphs
 
-class PLOT3D(str, Enum):
+class PLOT3D(str):
     CONTOUR = go.Contour
-    HEATMAT = px.imshow
+    HEATMAP = px.imshow
     MESH = go.Mesh3d
     SCATTER = px.scatter_3d
     SURFACE = go.Surface
     TABLE = go.Table
 
-    def __str__(self) -> str:
-        return self.value
+    # def __str__(self) -> str:
+    #     return self.value
 
-class PLOT4D(str, Enum):
+    def _graphs(self) -> list:
+        graphs = [i for i in vars(self) if not i.startswith("_")]
+        graphs.sort()
+        return graphs
+
+class PLOT4D(str):
     SCATTER = px.scatter_3d
     TABLE = go.Table
     
 
-    def __str__(self) -> str:
-        return self.value
+    # def __str__(self) -> str:
+    #     return self.value
 
+    def _graphs(self) -> list:
+        graphs = [i for i in vars(self) if not i.startswith("_")]
+        graphs.sort()
+        return graphs
