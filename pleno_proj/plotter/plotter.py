@@ -5,7 +5,6 @@ import plotly.graph_objects as go
 from typing import Union
 
 
-
 class Plotter:
     def __init__(self, data: Union[pd.DataFrame, np.ndarray], index_dims: list[str]):
         self.data = data
@@ -22,12 +21,19 @@ class Plotter:
         elif self.num_dims == 4:
             self.plots = PLOT4D
 
+    def sanity_check_plot_choice(self):
+        if np.max(self.data.shape) > 1000:
+            plot_func = self.plots.SCATTER
+        return plot_func
+
     def plot(self, dropdown):
         fig = go.Figure()
         plot_type = self.plots._graphs(self.plots)[0]
         plot_func = getattr(self.plots, plot_type)
+        plot_func = self.sanity_check_plot_choice()
+
         for well, data in self.data.groupby(level=0):
-            fig.add_trace(plot_func(x = data.index.get_level_values(1), y = data[dropdown], name=well))
+            fig.add_trace(plot_func(x = data.index.get_level_values(1), y = data[dropdown], mode='markers', name=well))
             
         # fig = go.Figure([px.imshow(img = df.loc['D6-tile0-0', :])
         #                  ])

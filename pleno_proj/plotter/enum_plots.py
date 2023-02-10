@@ -34,7 +34,8 @@ class PLOT3D(str):
     CONTOUR = go.Contour
     HEATMAP = px.imshow
     MESH = go.Mesh3d
-    SCATTER = px.scatter_3d
+    SCATTER = go.Scatter
+    SCATTER3D = go.Scatter3d
     SURFACE = go.Surface
     TABLE = go.Table
 

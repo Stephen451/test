@@ -20,8 +20,9 @@ class Provider:
         }
         return data, self.tt
     
-    def get_dimensions(self):
-        dims = self.tt.dimensions()
+    def get_dimensions(self, dims: list[str] =  None):
+        if not dims:
+            dims = self.tt.dimensions()
         default_value = [{'label': " ", 'value': ""}]
         Dim1 = [{'label': i.capitalize(), 'value': i} for i in dims]
         Dim1.sort(key=lambda e: e['label'])

@@ -33,7 +33,7 @@ class GraphPage():
             print(dropdown_value)
             index_dims = [i for i in [Dim1, Dim2, Dim3] if i]
             try:
-                df = self.data_source.get_df(dropdown_value, index_dims=index_dims, well_regex='^[BD]6-tile0-0')
+                df = self.data_source.get_df(dropdown_value, index_dims=index_dims, well_regex='^[ED]6-tile0-0')
                 x = df.index.get_level_values(0) 
                 y = df[dropdown_value]
             except Exception as e:
@@ -66,7 +66,7 @@ class GraphPage():
             Output(component_id='Dim3', component_property= 'value'),
             Input(component_id='dropdown', component_property='value')
         )
-        def update_data_dropdown(dropdown):
+        def update_data_values(dropdown):
             if dropdown in self.tt.data_dims:
                 dims = self.tt.data_dims[dropdown]
             else:
@@ -77,9 +77,32 @@ class GraphPage():
                     new_dims.append(dims[i])
                 else:
                     new_dims.append("")
-            print(new_dims)
             return new_dims[0], new_dims[1], new_dims[2]
     
+        @self.app.callback(
+            Output(component_id='Dim1', component_property= 'options'),
+            Output(component_id='Dim2', component_property= 'options'),
+            Output(component_id='Dim3', component_property= 'options'),
+            Input(component_id='dropdown', component_property='value')
+        )
+        def update_data_labels(dropdown):
+            if dropdown in self.tt.data_dims:
+                dims = self.tt.data_dims[dropdown]
+            else:
+                dims = self.tt.metric_dims[dropdown]
+
+            new_dims = []
+
+            for i in dims:
+                for transforms in self.data_source.allowable_transforms.keys():
+                    if i == transforms[0] and transforms[1] not in dims:
+                        new_dims.append(transforms[1])
+            new_dims.extend(dims)
+
+            new_dims = self.data_source.get_dimensions(new_dims)
+
+            return new_dims, new_dims, new_dims
+
     def set_layout(self):
         self.app.layout = html.Div(id = 'parent', children = [
         html.H1(id = 'H1', children = 'Styling using html components', style = {'textAlign':'center',\
