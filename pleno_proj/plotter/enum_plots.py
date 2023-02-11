@@ -1,26 +1,25 @@
-import plotly.express as px
-from enum import Enum
 import plotly.graph_objects as go
-import plotly.figure_factory as ff
+
 
 class StandardSyntax:
-    def __init__(self, graph: callable):
-        self.graph = graph
-
-    def plot(self, **kwargs):
-        """pass in a list of dimensions and use knowledge of plotly's API to map them to usual plotly args"""
-        x = kwargs.get('x', None)
-        y = kwargs.get('y', None)
-        df = kwargs.get('y', None)
-        color = kwargs.get('color', None)
+    def __init__(self, x, name, y = None, color = None, size = None):
+        # NOTE TO FUTURE ME - PICK UP HERE, FIGURE OUT HOW TO TIE PLOT BASESTRINGS TO THESE PARAMS, ADD THESE TO THE DICT AND RETURN TO THE PLOTTER
+        self.x = x
+        self.name = name
+        if y:
+            self.y = y
+        if color:
+            self.color = color
+        if size:
+            self.size = size
 
 class PLOT2D(str):
-    SCATTER = go.Scatter
-    BAR = go.Bar
-    TABLE = go.Table
-    DENSITY = go.Densitymapbox
-    HISTOGRAM = go.Histogram
-    BOX = px.box
+    SCATTER = {'type': 'scatter', 'mode': 'markers'}
+    BAR = {'type': 'bar'}
+    VIOLIN = {'type': 'violin'}
+    TABLE = {'type': 'table'}   
+    HISTOGRAM = {'type': 'histogram'}  
+    BOX = {'type': 'box'}
 
     # def __str__(self) -> str:
     #     return self.value
@@ -31,13 +30,15 @@ class PLOT2D(str):
         return graphs
 
 class PLOT3D(str):
-    CONTOUR = go.Contour
-    HEATMAP = px.imshow
-    MESH = go.Mesh3d
-    SCATTER = go.Scatter
-    SCATTER3D = go.Scatter3d
-    SURFACE = go.Surface
-    TABLE = go.Table
+    CONTOUR = {'type': 'contour'}  
+    HEATMAP = {'type': 'heatmap'}
+    HISTOGRAM = {'type': 'histogram'}  
+    VIOLIN = {'type': 'violin'}
+    HISTOGRAM = {'type': 'histogram2d'}  
+    SCATTER = {'type': 'scatter', 'mode': 'markers'}  
+    SCATTER3D = {'type': 'scatter3d', 'mode': 'markers'}  
+    SURFACE = {'type': 'surface'}  
+    TABLE = {'type': 'table'}  
 
     # def __str__(self) -> str:
     #     return self.value
@@ -48,8 +49,10 @@ class PLOT3D(str):
         return graphs
 
 class PLOT4D(str):
-    SCATTER = px.scatter_3d
-    TABLE = go.Table
+    SCATTER = {'type': 'scatter', 'mode': 'markers'}  
+    SCATTER3D = {'type': 'scatter3d', 'mode': 'markers'}  
+    TABLE = {'type': 'table'}
+    VOLUME ={'type': 'volume'}
     
 
     # def __str__(self) -> str:

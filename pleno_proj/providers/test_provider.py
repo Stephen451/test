@@ -27,7 +27,7 @@ class Provider:
         Dim1 = [{'label': i.capitalize(), 'value': i} for i in dims]
         Dim1.sort(key=lambda e: e['label'])
         default_value.extend(Dim1)
-        return Dim1
+        return default_value
 
     def get_wells(self):
         wells = [{'label': i, 'value': i} for i in self.tt.list_wells()]
@@ -93,7 +93,7 @@ class Provider:
                 joined_data = data.join(transform_data.loc[well], how='inner')
                 new_ind = [i if i is not transform_keys[0] else transform_keys[1] for i in joined_data.index._names]
                 joined_data = joined_data.reset_index()
-                new_df = pd.concat([joined_data])
+                new_df = pd.concat([new_df, joined_data])
             
             new_df = new_df.set_index(new_ind)
             new_df = new_df.drop(labels=transform_keys[0], axis = 1)

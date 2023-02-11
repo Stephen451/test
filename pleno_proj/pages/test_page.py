@@ -1,9 +1,10 @@
-from dash import html
+from dash import html, no_update, ctx
 from dash import dcc
 from dash.dependencies import Input, Output
 from plotter.plotter import Plotter
 from providers.test_provider import Provider
-import plotly.graph_objects as go
+import numpy as np
+import pandas as pd
 
 class GraphPage():
     def __init__(self, app):
@@ -11,6 +12,12 @@ class GraphPage():
 
         if self.app is not None and hasattr(self, 'config_callbacks'):
             self.config_callbacks()
+
+        self.index_dims = []
+
+        plotter = Plotter(pd.DataFrame([0]).set_index(0), [0])
+        self.available_plots = plotter.plots._graphs(plotter.plots)
+        self.available_plots.sort()
 
         self.data_source = Provider()
         self.data, self.tt = self.data_source.load_data()
@@ -27,38 +34,40 @@ class GraphPage():
         Input(component_id='dropdown', component_property= 'value'),
         Input(component_id='Dim1', component_property= 'value'),
         Input(component_id='Dim2', component_property= 'value'),
-        Input(component_id='Dim3', component_property= 'value')
+        Input(component_id='Dim3', component_property= 'value'),
+        Input(component_id='graph_type', component_property='value'),
         )
-        def set_graph(dropdown_value, Dim1, Dim2, Dim3):
-            print(dropdown_value)
-            index_dims = [i for i in [Dim1, Dim2, Dim3] if i]
-            try:
-                df = self.data_source.get_df(dropdown_value, index_dims=index_dims, well_regex='^[ED]6-tile0-0')
-                x = df.index.get_level_values(0) 
-                y = df[dropdown_value]
-            except Exception as e:
-                df = None
-                x = [0, 1]
-                y = [0, 1]
-            plt = Plotter(data=df, index_dims=index_dims)
+        def set_graph(dropdown_value, Dim1, Dim2, Dim3, graph_type):
+            triggered_id = ctx.triggered_id
+            if triggered_id != 'graph_type':
+                print(dropdown_value)
+                self.index_dims = [i for i in [Dim1, Dim2, Dim3] if i]
 
-            fig = plt.plot(dropdown_value)
-            # fig = go.Figure()
-            # # fig.add_trace()
-            # for well, data in df.groupby(level=0):
-            #     x = data.index.get_level_values(1) 
-            #     y = data[dropdown_value]
-            #     fig.add_trace(go.Scatter(x = x, y = y, mode='markers', name=well))
-            
-            # # fig = go.Figure([px.imshow(img = df.loc['D6-tile0-0', :])
-            # #                  ])
-            # fig.update_layout(title = dropdown_value,
-            #                 xaxis_title = "Test",
-            #                 yaxis_title = dropdown_value.capitalize()
-            #                 )
+                if len(self.index_dims) != len(set(self.index_dims)):
+                    return no_update
+
+                try:
+                    self.df = self.data_source.get_df(dropdown_value, index_dims=self.index_dims, well_regex='^[ED]6-tile0-0')
+                    x = self.df.index.get_level_values(0) 
+                    y = self.df[dropdown_value]
+                except Exception as e:
+                    df = pd.DataFrame()
+                    x = [0, 1]
+                    y = [0, 1]
+
+                if 'wells' in self.df.index.names:
+                    new_dims = ['wells']
+                    new_dims.extend(self.index_dims)
+                    self.index_dims = new_dims
+
+                self.plt = Plotter(data=self.df, index_dims=self.index_dims)
+
+                fig = self.plt.plot(dropdown_value, graph_type)
+
+            elif triggered_id == 'graph_type':
+                fig = self.plt.plot(dropdown_value, graph_type)
 
             return fig
-
         
         @self.app.callback(
             Output(component_id='Dim1', component_property= 'value'),
@@ -107,6 +116,10 @@ class GraphPage():
         self.app.layout = html.Div(id = 'parent', children = [
         html.H1(id = 'H1', children = 'Styling using html components', style = {'textAlign':'center',\
                                                 'marginTop':40,'marginBottom':40}),
+        dcc.Dropdown( id = 'graph_type',
+            options = self.available_plots,
+            value = 'SCATTER'),
+        dcc.Graph(id = 'main_plot'),
         dcc.Dropdown( id = 'dropdown',
             options = self.data,
             value = self.data[0]['value']),
@@ -119,5 +132,4 @@ class GraphPage():
         dcc.Dropdown( id = 'Dim3',
             options = self.Dim3,
             value = self.Dim3[0]['value']),
-        dcc.Graph(id = 'main_plot')
         ])
