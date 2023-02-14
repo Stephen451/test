@@ -32,7 +32,8 @@ class DataFormatter:
 
     def reduct(self, data: pd.DataFrame, index_dims: list[str]):
 
-        data = data.groupby(level=index_dims).mean()
+        if index_dims:
+            data = data.groupby(level=index_dims).mean()
         return data
 
     def reorder(self, data: pd.DataFrame, index_dims: list[str]):
@@ -98,21 +99,23 @@ class Plotter:
         # plot_func = self.sanity_check_plot_choice(plot_func)
 
         traces = []
-        for well, data in self.data.groupby(level=0):
-            trace_data = {}
-            for key, dim in zip(self.order_of_dims, self.index_dims):
-                trace_data[key] = self.get_data_from_location(data, dim)
-            
-            traces.append(plot_func.make_graph(**trace_data))
+        if plot_type != 'TABLE':
+            for well, data in self.data.groupby(level=0):
+                trace_data = {}
+                for key, dim in zip(self.order_of_dims, self.index_dims):
+                    trace_data[key] = self.get_data_from_location(data, dim)
+                
+                traces.append(plot_func.make_graph(**trace_data))
+        else:
+            traces = plot_func.make_graph(**{'header': {'values':list(self.data.columns)}, 'cells': {'values':self.data.values.T}})
         
         fig.add_traces(traces)
             
-        # fig = go.Figure([px.imshow(img = df.loc['D6-tile0-0', :])
-        #                  ])
-        fig.update_layout(title = 'Well Data',
-                        xaxis_title = self.index_dims[0].capitalize(),
-                        yaxis_title = dropdown.capitalize()
-                        )
+
+        # fig.update_layout(title = 'Well Data',
+        #                 xaxis_title = self.index_dims[0].capitalize(),
+        #                 yaxis_title = dropdown.capitalize()
+        #                 )
 
         return fig
 

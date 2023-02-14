@@ -67,10 +67,10 @@ class TableSyntax:
         """append stuff, each kwarg should be a key:value (str:str) pair"""
         graph_root = self.base_key.copy()
 
-        if 'main' in kwargs.keys():
-            graph_root['x'] = kwargs.get('main')
-        if 'name' in kwargs.keys():
-            graph_root['name'] = kwargs.get('name')
+        if 'header' in kwargs.keys():
+            graph_root['header'] = kwargs.get('header')
+        if 'cells' in kwargs.keys():
+            graph_root['cells'] = kwargs.get('cells')
         if 'secondary' in kwargs.keys():
             graph_root['y'] = kwargs.get('secondary')
         if 'color' in kwargs.keys():

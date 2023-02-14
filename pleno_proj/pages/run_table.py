@@ -9,7 +9,8 @@ import os
 from datetime import datetime
 
 # Set the directory path
-dir_path = "/mnt/nas/Decoding_Experiments/"
+# dir_path = "/mnt/nas/Decoding_Experiments/"
+dir_path = "/Volumes/bio_data/Decoding_Experiments"
 
 class RunTable():
     def __init__(self, app):
