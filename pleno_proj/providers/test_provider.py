@@ -8,7 +8,7 @@ class Provider:
     
     def load_data(self):
 
-        pat = '/Users/stephenk/pleno-droid/test/20221121_HYP1_KR_96plex_triplicate1_Ham_10x0.3'
+        pat = '/home/stephenk/pleno-droid/test/20221121_HYP1_KR_96plex_triplicate1_Ham_10x0.3'
         print(RunMetrics(pat))
         self.tt = RunMetrics(pat)
         all_names = self.tt.data_names.copy()

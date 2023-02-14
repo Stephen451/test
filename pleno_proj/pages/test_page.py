@@ -47,7 +47,7 @@ class GraphPage():
                     return no_update
 
                 try:
-                    self.df = self.data_source.get_df(dropdown_value, index_dims=self.index_dims, well_regex='^[ED]6-tile0-0')
+                    self.df = self.data_source.get_df(dropdown_value, index_dims=self.index_dims, well_regex='^[ED]6-tile0-1')
                     x = self.df.index.get_level_values(0) 
                     y = self.df[dropdown_value]
                 except Exception as e:

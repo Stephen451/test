@@ -6,16 +6,19 @@ from providers.test_provider import Provider
 import numpy as np
 import pandas as pd
 import os
+from datetime import datetime
 
 # Set the directory path
-dir_path = "/srv/nas/"
+dir_path = "/mnt/nas/Decoding_Experiments/"
 
-class GraphPage():
+class RunTable():
     def __init__(self, app):
         self.app = app
 
         if self.app is not None and hasattr(self, 'config_callbacks'):
             self.config_callbacks()
+        
+        self.data = self.get_run_data()
         
     def config_callbacks(self):
         
@@ -23,33 +26,11 @@ class GraphPage():
         Output(component_id='run_table', component_property= 'figure'),
         Input(component_id='dropdown', component_property= 'value')
         )
-        def set_graph(dropdown_value, Dim1, Dim2, Dim3, graph_type):
-            triggered_id = ctx.triggered_id
-            if triggered_id != 'graph_type':
-                print(dropdown_value)
-                self.index_dims = [i for i in [Dim1, Dim2, Dim3] if i]
+        def set_graph(dropdown_value):
 
-                if len(self.index_dims) != len(set(self.index_dims)):
-                    return no_update
+            self.plt = Plotter(data=self.data, index_dims=[])
 
-                try:
-                    self.df = self.data_source.get_df(dropdown_value, index_dims=self.index_dims, well_regex='^[ED]6-tile0-0')
-                    x = self.df.index.get_level_values(0) 
-                    y = self.df[dropdown_value]
-                except Exception as e:
-                    df = pd.DataFrame()
-                    x = [0, 1]
-                    y = [0, 1]
-
-                if 'wells' in self.df.index.names:
-                    self.index_dims.extend(['wells'])
-
-                self.plt = Plotter(data=self.df, index_dims=self.index_dims)
-
-                fig = self.plt.plot(dropdown_value, graph_type)
-
-            elif triggered_id == 'graph_type':
-                fig = self.plt.plot(dropdown_value, graph_type)
+            fig = self.plt.plot(dropdown_value, 'TABLE')
 
             return fig
         
@@ -59,8 +40,8 @@ class GraphPage():
                                                 'marginTop':40,'marginBottom':40}),
 
         dcc.Dropdown( id = 'dropdown',
-            options = self.data,
-            value = self.data[0]['value']),
+            options = [0,1,2],
+            value = 0),
         dcc.Graph(id = 'run_table'),
         ])
 
@@ -77,8 +58,9 @@ class GraphPage():
             if os.path.isdir(folder_path):
                 # Get the folder's date created
                 date_created = os.path.getctime(folder_path)
+                datetime_created = datetime.fromtimestamp(date_created).strftime('%Y-%m-%d %H:%M:%S') 
                 # Add the folder's information to the list
-                folder_info.append({"Folder Name": folder, "Date Created": date_created})
+                folder_info.append({"Run Name": folder, "Date Created": datetime_created})
 
         # Create a pandas data frame from the folder information list
         folder_df = pd.DataFrame(folder_info)
