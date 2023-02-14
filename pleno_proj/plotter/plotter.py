@@ -66,7 +66,8 @@ class Plotter:
     def __init__(self, data: Union[pd.DataFrame, np.ndarray], index_dims: list[str]):
         self.data = data
         self.index_dims = index_dims
-        formatter = DataFormatter(self.data, self.index_dims)
+        self.formatter = DataFormatter(self.data, self.index_dims)
+        self.order_of_dims = ['main', 'name', 'secondary', 'color', 'size']
 
         self.choose_plot()
 
@@ -98,11 +99,11 @@ class Plotter:
 
         traces = []
         for well, data in self.data.groupby(level=0):
-            new_trace = plot_func.copy()
-            new_trace['x'] = data.index.get_level_values(1)
-            new_trace['y'] = data[dropdown]
-            new_trace['name'] = well
-            traces.append(new_trace)
+            trace_data = {}
+            for key, dim in zip(self.order_of_dims, self.index_dims):
+                trace_data[key] = self.get_data_from_location(data, dim)
+            
+            traces.append(plot_func.make_graph(**trace_data))
         
         fig.add_traces(traces)
             
@@ -114,3 +115,10 @@ class Plotter:
                         )
 
         return fig
+
+    def get_data_from_location(self, data: pd.DataFrame, dim: str):
+        
+        if dim in data.columns:
+            return data.loc[:, dim]
+        elif dim in data.index.names:
+            return data.index.get_level_values(level=dim)

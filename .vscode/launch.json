@@ -12,5 +12,13 @@
             "console": "integratedTerminal",
             // "justMyCode": true
         },
+        {
+            "name": "test_sidebar",
+            "type": "python",
+            "request": "launch",
+            "program": "pleno_proj/index.py",
+            "console": "integratedTerminal",
+            // "justMyCode": true
+        }
     ]
 }

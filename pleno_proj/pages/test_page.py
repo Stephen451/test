@@ -56,9 +56,7 @@ class GraphPage():
                     y = [0, 1]
 
                 if 'wells' in self.df.index.names:
-                    new_dims = ['wells']
-                    new_dims.extend(self.index_dims)
-                    self.index_dims = new_dims
+                    self.index_dims.extend(['wells'])
 
                 self.plt = Plotter(data=self.df, index_dims=self.index_dims)
 
@@ -113,7 +111,7 @@ class GraphPage():
             return new_dims, new_dims, new_dims
 
     def set_layout(self):
-        self.app.layout = html.Div(id = 'parent', children = [
+        layout = html.Div(id = 'parent', children = [
         html.H1(id = 'H1', children = 'Styling using html components', style = {'textAlign':'center',\
                                                 'marginTop':40,'marginBottom':40}),
         dcc.Dropdown( id = 'graph_type',
@@ -133,3 +131,5 @@ class GraphPage():
             options = self.Dim3,
             value = self.Dim3[0]['value']),
         ])
+
+        return layout
