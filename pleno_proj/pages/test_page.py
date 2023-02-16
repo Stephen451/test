@@ -20,6 +20,7 @@ class GraphPage():
         self.plt = Plotter(pd.DataFrame([0]).set_index(0), [0])
         self.available_plots = self.plt.plots._graphs(self.plt.plots)
         self.available_plots.sort()
+        self.currently_loaded_df = ''
 
         self.file_path = None
         self.data_source = Provider(self.file_path)
@@ -71,10 +72,12 @@ class GraphPage():
                 #If wells in the index dims, remove it temporarily for the RunMetrics API
                 self.temp_dims = [i for i in self.index_dims if i != 'wells']
 
-                try:
-                    self.df = self.data_source.get_df(dropdown_value, index_dims=self.temp_dims) #, well_regex='^[ED]6-tile0-0')
-                except Exception as e:
-                    self.df = pd.DataFrame()
+                if self.currently_loaded_df != dropdown_value:
+                    try:
+                        self.currently_loaded_df = dropdown_value
+                        self.df = self.data_source.get_df(dropdown_value, index_dims=self.temp_dims) #, well_regex='^[ED]6-tile0-0')
+                    except Exception as e:
+                        self.df = pd.DataFrame()
 
                 #Apply reductions
                 if dim2_reduce:

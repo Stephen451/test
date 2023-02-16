@@ -69,7 +69,7 @@ class Plotter:
         self.data = data
         self.index_dims = index_dims
         self.formatter = DataFormatter(self.data, self.index_dims)
-        self.order_of_dims = ['name', 'main', 'secondary', 'size', 'color']
+        self.order_of_dims = ['secondary', 'name', 'main', 'size', 'color']
 
         self.choose_plot()
 
@@ -107,8 +107,11 @@ class Plotter:
         else:
             if len(self.data.index.names) > 1:
                 for well, data in self.data.groupby(level=0):
+                    #combine column data and indices
+                    data_dims = self.data.columns.to_list()
+                    data_dims.extend(self.index_dims)
                     trace_data = {}
-                    for key, dim in zip(self.order_of_dims, self.index_dims):
+                    for key, dim in zip(self.order_of_dims, data_dims):
                         trace_data[key] = self.get_data_from_location(data, dim)
                     
                     traces.append(plot_func.make_graph(**trace_data))

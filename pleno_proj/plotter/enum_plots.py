@@ -58,15 +58,15 @@ class MatrixSyntax:
         graph_root = self.base_key.copy()
 
         if 'main' in kwargs.keys():
-            graph_root['x'] = kwargs.get('main')
-        if 'name' in kwargs.keys():
-            graph_root['name'] = kwargs.get('name')
+            graph_root['z'] = kwargs.get('main')
+        # if 'name' in kwargs.keys():
+        #     graph_root['name'] = kwargs.get('name')
         if 'secondary' in kwargs.keys():
-            graph_root['y'] = kwargs.get('secondary')
+            graph_root['x'] = kwargs.get('secondary')
         if 'color' in kwargs.keys():
             graph_root['color'] = kwargs.get('color')
         if 'size' in kwargs.keys():
-            graph_root['marker_size'] = kwargs.get('size')
+            graph_root['y'] = kwargs.get('size')
         # for f in kwargs.items():
         #     graph_root[f[0]] = f[1]
 
