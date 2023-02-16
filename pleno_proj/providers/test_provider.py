@@ -1,41 +1,55 @@
 from pleno_droid.analytics.wrappers.run_metrics import RunMetrics
+from pleno_droid.utils.exceptions import InvalidRunFolderError
 import numpy as np
 import pandas as pd
 
 class Provider:
-    def __init__(self):
-        print('tt')
-    
-    def load_data(self):
-
-        pat = '/Users/stephenk/pleno-droid/test/20221121_HYP1_KR_96plex_triplicate1_Ham_10x0.3'
-        print(RunMetrics(pat))
-        self.tt = RunMetrics(pat)
-        all_names = self.tt.data_names.copy()
-        all_names.extend(self.tt.metrics_names)
-        data = [{'label': i, 'value': i} for i in all_names]
-        data.sort(key=lambda e: e['label'])
+    def __init__(self, path: str = None):
+        
+        self.path = path
         self.allowable_transforms = {
             ('nanoballs', 'hypercodes') : "AssignedHypercode"
         }
-        return data, self.tt
+        self.load_data()
+    
+    def load_data(self):
+        print('LOADING MORE DATA')
+        if not self.path:
+            self.path = '/Users/stephenk/pleno-droid/test/20221121_HYP1_KR_96plex_triplicate1_Ham_10x0.3'
+        
+        try:
+            # print(RunMetrics(self.path))
+            self.rm = RunMetrics(self.path)
+            all_names = self.rm.data_names.copy()
+            all_names.extend(self.rm.metrics_names)
+            self.data = [{'label': i, 'value': i} for i in all_names]
+            self.data.sort(key=lambda e: e['label'])
+  
+        except (AssertionError, InvalidRunFolderError):
+            print("run_info.yaml doesn't exist inside this folder")
+            self.path = '/Users/stephenk/pleno-droid/test/20221121_HYP1_KR_96plex_triplicate1_Ham_10x0.3'
+            self.rm = RunMetrics(self.path)
+            all_names = self.rm.data_names.copy()
+            all_names.extend(self.rm.metrics_names)
+            self.data = [{'label': i, 'value': i} for i in all_names]
+            self.data.sort(key=lambda e: e['label']) 
     
     def get_dimensions(self, dims: list[str] =  None):
         if not dims:
-            dims = self.tt.dimensions()
-        default_value = [{'label': " ", 'value': ""}]
+            dims = self.rm.dimensions()
+        default_value = [{'label': " ", 'value': ""}, {'label': "Wells", 'value': "wells"}]
         Dim1 = [{'label': i.capitalize(), 'value': i} for i in dims]
         Dim1.sort(key=lambda e: e['label'])
         default_value.extend(Dim1)
         return default_value
 
     def get_wells(self):
-        wells = [{'label': i, 'value': i} for i in self.tt.list_wells()]
+        wells = [{'label': i, 'value': i} for i in self.rm.list_wells()]
         return wells
 
     def transform_dims(self, Dim1: str, Dim2: str, well_regex: str):
 
-        transformer = self.tt.get_data(data_regex = self.allowable_transforms[(Dim1, Dim2)], index_dims = [Dim1], well_regex = well_regex) 
+        transformer = self.rm.get_data(data_regex = self.allowable_transforms[(Dim1, Dim2)], index_dims = [Dim1], well_regex = well_regex) 
         transformer.columns = [Dim2]
 
         return transformer
@@ -46,22 +60,27 @@ class Provider:
             return True
         return False
 
-    def check_data(self, data_name:str, index_dims: list[str], data_type: str, well_regex: str):
+    def check_data(self, data_name:str, index_dims: list[str], data_type: str, well_regex: str, skip_dims: list[str] = None):
         transformable = False
 
         if data_type == 'data':
-            source = self.tt.data_dims
+            source = self.rm.data_dims
         else:
-            source = self.tt.metric_dims
+            source = self.rm.metric_dims
 
-        #check if all the indicies requested are the same as the raw data.  If missing some just the data with full dimensionality
-        if all(item in source[data_name] for item in index_dims):
+        if skip_dims:
+            temp_dims = [i for i in index_dims if i not in skip_dims]
+        else:
+            temp_dims = index_dims
+
+        #check if all the indicies requested are the same as the raw data.  If missing some just return the data with full dimensionality
+        if all(item in source[data_name] for item in temp_dims):
             return source[data_name], None
 
         #If all the requested Dims aren't in the raw data, find exceptions and check if we have a transformation mapped already
         requested_inds = []
         existing_inds = source[data_name]
-        for item in index_dims:
+        for item in temp_dims:
             if item not in existing_inds:
                 requested_inds.append(item)
             else:
@@ -75,15 +94,18 @@ class Provider:
 
         return index_dims, None
 
-    def get_df(self, data_name: str, index_dims: list[str], well_regex:str = 'D6-tile0-0'):
-        if data_name in self.tt.data_dims.keys():
+    def get_df(self, data_name: str, index_dims: list[str], well_regex:str = None, skip_dims: list[str] = []):
+        if data_name in self.rm.data_dims.keys():
             data_type = 'data'
         else:
             data_type = 'metric'
 
+        if not well_regex:
+            well_regex = "^[A-Z][0-9]{1,2}(-tile[0-9]-[0-9])?$"
+
         fixed_index_dims, transformer = self.check_data(data_name=data_name, index_dims=index_dims, data_type=data_type, well_regex=well_regex)
 
-        df = self.tt.get_data(data_regex = data_name, index_dims = fixed_index_dims, well_regex=well_regex)
+        df = self.rm.get_data(data_regex = data_name, index_dims = fixed_index_dims, well_regex=well_regex, skip_dims=skip_dims)
 
         if transformer:
             transform_keys = list(transformer.keys())[0]
@@ -103,3 +125,15 @@ class Provider:
         if len(df) > 10000:
             df = df.sample(10000)
         return df
+
+    def filter_df(self, data: pd.DataFrame, filter_dim: str, filter_type:str, index_dims: list[str]):
+        agg_levels = [i for i in data.index.names if i != filter_dim]
+
+        if filter_type == 'mean':
+            temp_df = data.groupby(level=agg_levels).mean()
+        if filter_type == 'std':
+            temp_df = data.groupby(level=agg_levels).mean()
+
+        new_dims = [i for i in index_dims if i != filter_dim]
+
+        return temp_df, new_dims

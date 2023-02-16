@@ -41,12 +41,13 @@ class DataFormatter:
         current_dims = list(data.index.names).copy()
         future_dims = []
 
-        for i in index_dims:
-            if i in current_dims:
-                future_dims.append(i)
-                current_dims.remove(i)
-        future_dims.extend(current_dims)
-        data = data.reorder_levels(future_dims)
+        if not data.empty:
+            for i in index_dims:
+                if i in current_dims:
+                    future_dims.append(i)
+                    current_dims.remove(i)
+            future_dims.extend(current_dims)
+            data = data.reorder_levels(future_dims)
 
         return data
 
@@ -68,7 +69,7 @@ class Plotter:
         self.data = data
         self.index_dims = index_dims
         self.formatter = DataFormatter(self.data, self.index_dims)
-        self.order_of_dims = ['main', 'name', 'secondary', 'color', 'size']
+        self.order_of_dims = ['name', 'main', 'secondary', 'size', 'color']
 
         self.choose_plot()
 
@@ -94,20 +95,26 @@ class Plotter:
         if graph_name and graph_name in self.allowed_plots:
             plot_type = graph_name
         else:
-            plot_type = self.allowed_plots[-1]
+            plot_type = self.allowed_plots[0]
         plot_func = getattr(self.plots, plot_type)
         # plot_func = self.sanity_check_plot_choice(plot_func)
 
         traces = []
-        if plot_type != 'TABLE':
-            for well, data in self.data.groupby(level=0):
-                trace_data = {}
-                for key, dim in zip(self.order_of_dims, self.index_dims):
-                    trace_data[key] = self.get_data_from_location(data, dim)
-                
-                traces.append(plot_func.make_graph(**trace_data))
+        if plot_type == 'TABLE':
+            tmp = self.data.reset_index()
+            tmp = tmp.sort_values(self.data.index.names)
+            traces = plot_func.make_graph(**{'header': {'values':list(tmp.columns)}, 'cells': {'values':tmp.values.T}})
         else:
-            traces = plot_func.make_graph(**{'header': {'values':list(self.data.columns)}, 'cells': {'values':self.data.values.T}})
+            if len(self.data.index.names) > 1:
+                for well, data in self.data.groupby(level=0):
+                    trace_data = {}
+                    for key, dim in zip(self.order_of_dims, self.index_dims):
+                        trace_data[key] = self.get_data_from_location(data, dim)
+                    
+                    traces.append(plot_func.make_graph(**trace_data))
+            else:
+                trace_data = {'main': self.data.index.get_level_values(0), 'secondary': self.data[dropdown].values}
+                traces.append(plot_func.make_graph(**trace_data))
         
         fig.add_traces(traces)
             
