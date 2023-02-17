@@ -80,7 +80,7 @@ class RunTable():
                         # Add the folder's information to the list
                         path_url = quote(str(folder), safe = '')
                         decode = ""
-                        folder_info.append({"Run Name": f"<a href='http://127.0.0.1:8051/page-2?path={path_url}' target='_blank'>{folder.stem}</a>", "Date Created": datetime_created, "Decode": decode, "Path": str(folder)})
+                        folder_info.append({"Run Name": f"<a href='http://127.0.0.1:8051/page-1?path={path_url}' target='_blank'>{folder.stem}</a>", "Date Created": datetime_created, "Decode": decode, "Path": str(folder)})
             elif i == 1:
                for folder in path.glob("*/[0-9]*8*"):
                     if folder.is_dir():
@@ -90,7 +90,7 @@ class RunTable():
                         # Add the folder's information to the list
                         path_url = quote(str(folder), safe = '')
                         decode = folder.parent.stem
-                        folder_info.append({"Run Name": f"<a href='http://127.0.0.1:8051/page-2?path={path_url}' target='_blank'>{folder.stem}</a>", "Date Created": datetime_created, "Decode": decode, "Path": str(folder)}) 
+                        folder_info.append({"Run Name": f"<a href='http://127.0.0.1:8051/page-1?path={path_url}' target='_blank'>{folder.stem}</a>", "Date Created": datetime_created, "Decode": decode, "Path": str(folder)}) 
 
         # Create a pandas data frame from the folder information list
         folder_df = pd.DataFrame(folder_info)

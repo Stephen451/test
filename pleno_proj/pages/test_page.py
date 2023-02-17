@@ -56,7 +56,7 @@ class GraphPage():
         Input(component_id='Dim3', component_property= 'value'),
         Input(component_id='Dim4', component_property= 'value'),
         Input(component_id='graph_type', component_property='value'),
-        Input(component_id='dim2_reduce', component_property='value'),
+        Input(component_id='dim2_reduce', component_property='value'), prevent_initial_call=True,
         )
         def set_graph(dropdown_value, Dim1, Dim2, Dim3, Dim4, graph_type, dim2_reduce):
             self.refresh_data()
