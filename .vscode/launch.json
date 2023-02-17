@@ -8,7 +8,7 @@
             "name": "quick debug",
             "type": "python",
             "request": "launch",
-            "program": "pleno_proj/core.py",
+            "program": "pleno_proj/scratch.py",
             "console": "integratedTerminal",
             // "justMyCode": true
         },
