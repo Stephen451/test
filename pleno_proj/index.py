@@ -3,15 +3,16 @@ import dash
 import dash_bootstrap_components as dbc
 from pages.test_page import GraphPage
 from pages.sidebar import Sidebar
+from pages.sidebar_plots import Sidebar2
 from pages.run_table import RunTable
 from pages.ready_made_plots import ReadyPlots
 from dash import Input, Output, dcc, html
 
 app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
-sd = Sidebar(app=app)
+sd = Sidebar2(app=app)
 # app = sd.app
 app.layout = sd.set_layout()
-gp = GraphPage(app=app)
+# gp = GraphPage(app=app)
 rt = RunTable(app=app)
 rp = ReadyPlots(app=app)
 
@@ -20,7 +21,7 @@ def render_page_content(pathname):
     if pathname in ["/", "/page-1"]:
         return rp.set_layout()
     elif pathname == "/page-2":
-        return gp.set_layout()
+        return "Page 2" #gp.set_layout()
     elif pathname == "/page-3":
         return rt.set_layout()
     # If the user tries to reach a different page, return a 404 message
@@ -30,7 +31,7 @@ def render_page_content(pathname):
 app.validation_layout = html.Div(
     children = [
         sd.set_layout(),
-        gp.set_layout(),
+        # gp.set_layout(),
         rt.set_layout(),
         rp.set_layout()
     ]
