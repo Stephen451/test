@@ -19,6 +19,14 @@
             "program": "pleno_proj/index.py",
             "console": "integratedTerminal",
             // "justMyCode": true
+        },
+        {
+            "name": "test_scratch",
+            "type": "python",
+            "request": "launch",
+            "program": "pleno_proj/pages/sidebar_plots.py",
+            "console": "integratedTerminal",
+            // "justMyCode": true
         }
     ]
 }

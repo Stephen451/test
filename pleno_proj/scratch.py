@@ -4,43 +4,115 @@ import  dash_bootstrap_components as dbc
 from dash import html, dcc
 import dash_mantine_components as dmc
 
-app = dash.Dash(__name__)
+from pleno_droid.analytics.plots import HypercodePlots, Position
 
-app.layout = html.Div([
-    html.Div([
-        dmc.Burger(id="toggle-button", opened=False),
-    ], className='sidebar-toggle'),
-    dmc.Drawer(
-        id='sidebar',
-        children=[
-            # add your sidebar content here
-            html.P("Sidebar content goes here.")
+CONTENT_STYLE1 = {
+    "transition": "margin-left .5s",
+    "margin-left": "2rem",
+    "margin-right": "2rem",
+    "padding": "2rem 1rem",
+    "background-color": "#f8f9fa",
+}
+
+class Sidebar2():
+# the style arguments for the sidebar. We use position:fixed and a fixed width
+
+    def __init__(self, app):
+        self.app = app
+
+        if self.app is not None and hasattr(self, 'config_callbacks'):
+            self.config_callbacks()
+
+        self.available_plots = HypercodePlots.get_registered_functions()
+
+    def build_accordion(self):
+        accordion_items = []
+        button_no = 0
+        for i, field in enumerate(self.available_plots.items()):
+                
+                button_list = []
+                for button in field[1]:
+                    button_list.append(
+                        dmc.Button(
+                        button['label'],
+                        id = {"type": f"ready-sidebar-button", "value": button['value']},
+                        fullWidth=True,
+                        variant='outline'
+                        )
+                    )
+                    button_no += 1
+
+                item = dbc.AccordionItem(
+                    button_list,
+                    title=field[0],
+                    item_id=f"accordion_{i}"
+                    )
+                accordion_items.append(item)
+        return accordion_items
+
+    def set_layout(self):
+        button = html.Div([
+                dmc.Burger(id="toggle-button", opened=False),
+            ], className='sidebar-toggle',
+            style={"position": "absolute", "top": 10, "left": 10})
+
+        sidebar = dmc.Drawer(
+                id='sidebar',
+                children=[
+                    dbc.Accordion(
+                                self.build_accordion(),
+                                # vertical=True,
+                                # pills=True,
+                                start_collapsed=True,
+                                flush=True
+                            )],
+                padding="md",
+                position="left",
+                trapFocus=False,
+                withOverlay=False,
+                opened=True,
+                closeOnEscape=True,
+                # header=dmc.Button("Toggle Sidebar"),
+            )
+
+        # content = html.Div(id='page-content',
+        #     style=CONTENT_STYLE1),
+
+        layout = html.Div(
+        [
+            dcc.Store(id='side_click'),
+            dcc.Location(id="url"),
+            button,
+            sidebar,
+            # content,
         ],
-        padding="md",
-        position="left",
-        trapFocus=False,
-        withOverlay=False
-        # header=dmc.Button("Toggle Sidebar"),
-    ),
-    html.Div([
-        # add your main content here
-    ], className='main-content'),
-])
+        )
+        return layout
 
 
-def register_call():
+    def config_callbacks(self):
 
-    @app.callback(
-        Output("sidebar", "opened"),
-        [Input("toggle-button", "opened")],
-        [State("sidebar", "opened")],
-    )
-    def toggle_sidebar(n_clicks, is_open):
-        if n_clicks:
-            return not is_open
-        return is_open
+        @self.app.callback(
+            Output("sidebar", "opened"),
+            [Input("toggle-button", "opened")],
+            [State("sidebar", "opened")],
+        )
+        def toggle_sidebar(n_clicks, is_open):
+            if n_clicks:
+                return not is_open
+            return is_open
+
+    # @app.callback(
+    #     Output("toggle-button", "opened"),
+    #     [Input("sidebar", "opened")],
+    # )
+    # def toggle_sidebar(is_open):
+    #     if is_open:
+    #         return is_open 
 
 
 if __name__ == '__main__':
-    register_call()
+    app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
+    sd = Sidebar2(app=app)
+    app.layout = sd.set_layout()
     app.run_server(debug=True, use_reloader=False)
