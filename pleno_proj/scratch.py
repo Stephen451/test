@@ -81,7 +81,7 @@ class Sidebar2():
         layout = html.Div(
         [
             dcc.Store(id='side_click'),
-            dcc.Location(id="url"),
+            # dcc.Location(id="url"),
             button,
             sidebar,
             # content,
