@@ -18,7 +18,6 @@ Y_WELLS = 16
 # potential max size of flows + colors + tiles
 FLOWS = 10
 COLORS = 4
-fake_images = [[[[{} for y in range(Y_WELLS)] for x in range(X_WELLS)] for z in range(COLORS)] for a in range(FLOWS)]
 BASE_URL = '/Users/stephenk/pleno-droid/test/20221121_HYP1_KR_96plex_triplicate1_Ham_10x0.3'
 # register_page(__name__)
 
@@ -46,6 +45,9 @@ class ReadyPlots():
         self.data_source = Provider(self.file_path)
         self.wells = self.data_source.get_wells()
         self.rm = self.data_source.rm
+        self.flow_marks = {i: 'F'+str(i) for i in range(0, self.data_source.config['PanelInfo']['panel_flow_count'])}
+
+        self.channel_marks = {i-1:'C'+str(i) for i in range(1,5)}
 
         self.fake_images = [[[[{} for y in range(Y_WELLS)] for x in range(X_WELLS)] for z in range(COLORS)] for a in range(FLOWS)]
 
@@ -84,37 +86,81 @@ class ReadyPlots():
             self.refresh_data()
 
             return json.dumps('page_content')#, self.wells, self.wells[0]['value']
+        
+        @self.app.callback(
+            Output('ready_plots_wellplate_1', component_property='wells_array'),
+            Input({'type': "ready-sidebar-button", "value": ALL}, "n_clicks"),
+            Input('url', 'search'),
+            Input(component_id='channel_slider', component_property='value'),
+            Input(component_id='channel_slider', component_property='value'))  
+        def update_wellplate_array(clicked_button, search, flow_filter, channel_filter):
+            
+
+            fake_images = [[[[{} for y in range(Y_WELLS)] for x in range(X_WELLS)] for z in range(COLORS)] for a in range(FLOWS)]
+            return fake_images
 
         @self.app.callback(
         Output(component_id='plotting', component_property= 'figure'),
         Input({'type': "ready-sidebar-button", "value": ALL}, "n_clicks"),
         Input(component_id='ready_plots_wellplate_1', component_property='selected_wells_x'),
-        Input(component_id='ready_plots_wellplate_1', component_property='selected_wells_y'), prevent_initial_call=True,
+        Input(component_id='ready_plots_wellplate_1', component_property='selected_wells_y'),
+        Input(component_id='flow_slider', component_property='value'),
+        Input(component_id='channel_slider', component_property='value'), 
+        prevent_initial_call=True,
         )
-        def set_graph(clicked_button, selected_wells_x, selected_wells_y):
-            if hasattr(ctx.triggered_id, 'keys'):
-                self.graph_type = ctx.triggered_id['value']
+        def set_graph(clicked_button, selected_wells_x, selected_wells_y, flow_filter, channel_filter):
+            if hasattr(ctx.triggered_id, 'type'):
+                if ctx.triggered_id['type'] == 'ready-sidebar-button':
+                    self.graph_type = ctx.triggered_id['value']
 
             wells = self.selected_wells_to_well_name(selected_wells_x=selected_wells_x, selected_wells_y=selected_wells_y)
             wells = self.list_of_wells_to_regex(wells)
 
             if self.graph_type:
 
-                plot_func = self.find_plot_func(self.graph_type) 
+                plot_func = self.find_plot_func(self.graph_type)
 
-                fig = plot_func(self.data_source.rm, well_regex = wells)
+                fig = plot_func(self.data_source.rm, well_regex=wells, flow_filter=flow_filter, channel_filter=channel_filter)
                 fig.update_layout({'width': 700, 'height': 700})
 
                 return fig
 
     def set_layout(self):
         layout = dbc.Row([
-        dbc.Col(width=.7),
+        dbc.Col(width=1),
         dbc.Col(dbc.Container([
         # html.Div(id = 'parent', children = [
         html.H1(id = 'H1', children = 'Styling using html components', style = {'textAlign':'center',\
                                                 'marginTop':40,'marginBottom':40}),
         html.Div(id='hidden-div1', style={'display':'none'}),
+        dbc.Row([
+            dbc.Col( [ 
+                html.Div([
+                    dcc.Slider( 0, len(self.flow_marks)-1,
+                        step=None,
+                        marks=self.flow_marks,
+                        included=False,
+                        value=1, 
+                        id="flow_slider",
+                        updatemode='drag',
+                        vertical=False,
+                        ),
+                ], style={"marginTop": "5px"},)
+            ], width=3),
+            dbc.Col( [ 
+                html.Div([
+                    dcc.Slider( 0, len(self.channel_marks)-1,
+                        step=None,
+                        marks=self.channel_marks,
+                        included=False,
+                        value=1, 
+                        id="channel_slider",
+                        updatemode='drag',
+                        vertical=False,
+                        ),
+                ], style={"marginTop": "5px"},)
+            ], width=3),
+        ]),
         dbc.Row([
 
             dbc.Col([
@@ -127,28 +173,30 @@ class ReadyPlots():
                     selected_color='red', image_pixels=FULL_IMAGE_SIZE, full_pixels=800, base_url=BASE_URL,
                     single_thumbnail={},current_location={},selected_well_x=0,selected_well_y=0, #selected_wells_x = [0], selected_wells_y = [0],
                     label_margin=30),], 
-                    width=6,
-            ),
+                    width=5,),
+            dbc.Col(width=2),            
             dbc.Col(
                 dcc.Graph(id = 'plotting', style={'width': '40vw', 'height': '40vw'}),
-                    width=6),
+                    width=5),
         ])
-        ], fluid=True), width = 10.6),
-        dbc.Col(width=.7)
+        ], fluid=True), width = 10),
+        dbc.Col(width=1)
         ])
 
         return layout
 
     def selected_wells_to_well_name(self, selected_wells_x, selected_wells_y):
-        assert len(selected_wells_x) == len(selected_wells_y)
-
-        wells = []
-        for i in range(0, selected_wells_x):
-            x = selected_wells_x[i] + 1
-            y = string.ascii_uppercase[selected_wells_y[i]]
-            wells.append(y+str(x))
-
-        return wells
+        if selected_wells_x:
+            assert len(selected_wells_x) == len(selected_wells_y)
+    
+            letter_y = [chr(i + 65) for i in selected_wells_y]
+            str_x = [str(i+1) for i in selected_wells_x]
+            wells = [j+i for i,j in zip(str_x, letter_y)]
+            return list(set(wells))
+        
+        else:
+            #lists are None when no wells are selected
+            return []
 
     def refresh_data(self):
 

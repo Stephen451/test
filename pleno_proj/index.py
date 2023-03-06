@@ -6,9 +6,11 @@ from components.sidebar import Sidebar
 from components.sidebar_plots import Sidebar2
 from components.run_table import RunTable
 from components.ready_made_plots import ReadyPlots
-from dash import Input, Output, dcc, html
+# from dash import Input, Output, dcc, html, MultiplexerTransform
+from dash_extensions.enrich import Output, DashProxy, Input, MultiplexerTransform, dcc, html
 
-app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
+# app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP], transforms=[MultiplexerTransform()])
+app = DashProxy(external_stylesheets=[dbc.themes.BOOTSTRAP], transforms=[MultiplexerTransform()], prevent_initial_callbacks=True)
 
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),

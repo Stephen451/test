@@ -1,5 +1,7 @@
 from pleno_droid.analytics.wrappers.run_metrics import RunMetrics
 from pleno_droid.utils.exceptions import InvalidRunFolderError
+from pleno_common.models.plenoid_library import find_plenoid_library_files
+import yaml
 import numpy as np
 import pandas as pd
 
@@ -16,7 +18,7 @@ class Provider:
         print('LOADING MORE DATA')
         if not self.path:
             self.path = '/Users/stephenk/pleno-droid/test/20221121_HYP1_KR_96plex_triplicate1_Ham_10x0.3'
-        
+
         try:
             # print(RunMetrics(self.path))
             self.rm = RunMetrics(self.path)
@@ -24,8 +26,10 @@ class Provider:
             all_names.extend(self.rm.metrics_names)
             self.data = [{'label': i, 'value': i} for i in all_names]
             self.data.sort(key=lambda e: e['label'])
+            with open(find_plenoid_library_files(self.path)[0][1]) as f:
+                self.config = yaml.safe_load(f)
   
-        except (AssertionError, InvalidRunFolderError):
+        except (AssertionError, InvalidRunFolderError, ValueError, IndexError):
             print("run_info.yaml doesn't exist inside this folder")
             self.path = '/Users/stephenk/pleno-droid/test/20221121_HYP1_KR_96plex_triplicate1_Ham_10x0.3'
             self.rm = RunMetrics(self.path)
@@ -33,6 +37,7 @@ class Provider:
             all_names.extend(self.rm.metrics_names)
             self.data = [{'label': i, 'value': i} for i in all_names]
             self.data.sort(key=lambda e: e['label']) 
+            self.config = {'PanelInfo':{'panel_flow_count':8}}
     
     def get_dimensions(self, dims: list[str] =  None):
         if not dims:
