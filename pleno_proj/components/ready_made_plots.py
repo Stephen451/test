@@ -13,10 +13,10 @@ from pdc.wellplate import wellplate
 from pleno_droid.analytics.plots import BasePlotter, HypercodePlots, Position, HypercodePerformance
 
 FULL_IMAGE_SIZE = 2048 
-X_WELLS = 24
-Y_WELLS = 16
+X_WELLS = 12
+Y_WELLS = 9
 # potential max size of flows + colors + tiles
-FLOWS = 10
+FLOWS = 8
 COLORS = 4
 BASE_URL = '/Users/stephenk/pleno-droid/test/20221121_HYP1_KR_96plex_triplicate1_Ham_10x0.3'
 # register_page(__name__)
@@ -45,7 +45,7 @@ class ReadyPlots():
         self.data_source = Provider(self.file_path)
         self.wells = self.data_source.get_wells()
         self.rm = self.data_source.rm
-        self.flow_marks = {i: 'F'+str(i) for i in range(0, self.data_source.config['PanelInfo']['panel_flow_count'])}
+        self.flow_marks = {i: 'F'+str(i) for i in range(0, self.data_source.config['PanelInfo']['panel_flow_count']+1)}
 
         self.channel_marks = {i-1:'C'+str(i) for i in range(1,5)}
 
@@ -89,15 +89,22 @@ class ReadyPlots():
         
         @self.app.callback(
             Output('ready_plots_wellplate_1', component_property='wells_array'),
+            Output(component_id='ready_plots_wellplate_1', component_property='flow_slider'),
+            Output(component_id='ready_plots_wellplate_1', component_property='color_slider'),   
             Input({'type': "ready-sidebar-button", "value": ALL}, "n_clicks"),
             Input('url', 'search'),
-            Input(component_id='channel_slider', component_property='value'),
+            Input(component_id='flow_slider', component_property='value'),
             Input(component_id='channel_slider', component_property='value'))  
         def update_wellplate_array(clicked_button, search, flow_filter, channel_filter):
             
+            # fake_images = [[[[{} for y in range(Y_WELLS)] for x in range(X_WELLS)] for z in range(len(self.channel_marks))] for a in range(len(self.flow_marks))]
+            fake_images = np.empty((len(self.channel_marks), len(self.flow_marks), X_WELLS, Y_WELLS), dtype=dict)
+            fake_images[:] = [{}]
+            for well in self.wells:
+                well_ind = self.well_name_to_2d_ind(well['label'])
+                fake_images[:, :, well_ind[0], well_ind[1]] = {"text": "Avail", "color": 0}
 
-            fake_images = [[[[{} for y in range(Y_WELLS)] for x in range(X_WELLS)] for z in range(COLORS)] for a in range(FLOWS)]
-            return fake_images
+            return fake_images.tolist(), flow_filter, channel_filter
 
         @self.app.callback(
         Output(component_id='plotting', component_property= 'figure'),
@@ -218,3 +225,14 @@ class ReadyPlots():
             plot_funcs = [i['value'] for i in plot_class[1]]
             if label in plot_funcs:
                     return plot_class[0]().__getattribute__(label)
+            
+    def well_name_to_2d_ind(self, well_name: str):
+        '''well name should be in either "E6" or "E6-tile0-1 formats'''
+        well_x = well_name[1]
+        well_y = well_name[0]
+
+        well_x = int(well_x) - 1
+        well_y = ord(well_y) - ord("A")
+
+        return well_x, well_y
+    
