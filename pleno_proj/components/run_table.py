@@ -96,6 +96,7 @@ class RunTable():
 
         # Create a pandas data frame from the folder information list
         folder_df = pd.DataFrame(folder_info)
-        folder_df = folder_df.sort_values('Date Created', ascending=False)
+        if "Date Created" in folder_df.columns:
+            folder_df = folder_df.sort_values('Date Created', ascending=False)
 
         return folder_df

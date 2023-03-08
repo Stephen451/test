@@ -9,7 +9,7 @@ from components.ready_made_plots import ReadyPlots
 # from dash import Input, Output, dcc, html, MultiplexerTransform
 from dash_extensions.enrich import Output, DashProxy, Input, MultiplexerTransform, dcc, html
 
-# app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP], transforms=[MultiplexerTransform()])
+# app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 app = DashProxy(external_stylesheets=[dbc.themes.BOOTSTRAP], transforms=[MultiplexerTransform()], prevent_initial_callbacks=True)
 
 app.layout = html.Div([
@@ -23,11 +23,11 @@ sd = Sidebar2(app=app)
 # app.layout = sd.set_layout()
 # gp = GraphPage(app=app)
 rt = RunTable(app=app)
-app.layout = app.layout = html.Div([
-    dcc.Location(id='url', refresh=False),
-    rt.set_layout()
-]
-)
+# app.layout = app.layout = html.Div([
+#     dcc.Location(id='url', refresh=False),
+#     rt.set_layout()
+# ]
+# )
 rp = ReadyPlots(app=app)
 
 @app.callback(Output("parent", "children"), [Input("url", "pathname")])
@@ -44,6 +44,8 @@ def render_page_content(pathname):
 ### Assemble all layouts ###
 app.validation_layout = html.Div(
     children = [
+        dcc.Location(id='url', refresh=False),
+        html.Div(id = 'parent'),
         sd.set_layout(),
         # gp.set_layout(),
         rt.set_layout(),

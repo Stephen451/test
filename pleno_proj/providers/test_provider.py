@@ -31,7 +31,6 @@ class Provider:
   
         except (AssertionError, InvalidRunFolderError, ValueError, IndexError):
             print("run_info.yaml doesn't exist inside this folder")
-            self.path = '/Users/stephenk/pleno-droid/test/20221121_HYP1_KR_96plex_triplicate1_Ham_10x0.3'
             self.rm = RunMetrics(self.path)
             all_names = self.rm.data_names.copy()
             all_names.extend(self.rm.metrics_names)

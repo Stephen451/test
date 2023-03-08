@@ -45,7 +45,7 @@ class ReadyPlots():
         self.data_source = Provider(self.file_path)
         self.wells = self.data_source.get_wells()
         self.rm = self.data_source.rm
-        self.flow_marks = {i: 'F'+str(i) for i in range(0, self.data_source.config['PanelInfo']['panel_flow_count']+1)}
+        self.flow_marks = {i: 'F'+str(i) for i in range(0, self.data_source.config['PanelInfo']['panel_flow_count'])}
 
         self.channel_marks = {i-1:'C'+str(i) for i in range(1,5)}
 
@@ -85,7 +85,7 @@ class ReadyPlots():
     
             self.refresh_data()
 
-            return json.dumps('page_content')#, self.wells, self.wells[0]['value']
+            return json.dumps('page_content')  # , self.wells, self.wells[0]['value']
         
         @self.app.callback(
             Output('ready_plots_wellplate_1', component_property='wells_array'),
@@ -129,7 +129,7 @@ class ReadyPlots():
 
                 fig = plot_func(self.data_source.rm, well_regex=wells, flow_filter=flow_filter, channel_filter=channel_filter)
                 fig.update_layout({'width': 700, 'height': 700})
-
+                
                 return fig
 
     def set_layout(self):
