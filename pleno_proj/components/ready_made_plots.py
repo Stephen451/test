@@ -11,7 +11,9 @@ import string
 import urllib
 from pdc.wellplate import wellplate
 from pleno_droid.analytics.plots import BasePlotter, HypercodePlots, Position, HypercodePerformance
+from components.base_page import BasePage
 
+# register_page(__name__)
 FULL_IMAGE_SIZE = 2048 
 X_WELLS = 12
 Y_WELLS = 9
@@ -21,10 +23,10 @@ COLORS = 4
 BASE_URL = '/Users/stephenk/pleno-droid/test/20221121_HYP1_KR_96plex_triplicate1_Ham_10x0.3'
 # register_page(__name__)
 
-class ReadyPlots():
-    def __init__(self, app):
+class ReadyPlots(BasePage):
+    def __init__(self, app, provider_manager):
+        super().__init__(app, provider_manager)
         print('creating a new plot page')
-        self.app = app
 
         if self.app is not None and hasattr(self, 'config_callbacks'):
             self.config_callbacks()
@@ -44,7 +46,6 @@ class ReadyPlots():
         #NOTE ALL IDS SHOULD BE LINKED TO THE PAGE THEY"RE ON FOR CLARITY I.E. id=readyplots_table_1
         self.data_source = Provider(self.file_path)
         self.wells = self.data_source.get_wells()
-        self.rm = self.data_source.rm
         self.flow_marks = {i: 'F'+str(i) for i in range(0, self.data_source.config['PanelInfo']['panel_flow_count'])}
 
         self.channel_marks = {i-1:'C'+str(i) for i in range(1,5)}
@@ -54,7 +55,7 @@ class ReadyPlots():
         # automatically resize the wellplate control on page reload.
         self.app.clientside_callback(
             """
-            function(href) {
+            function() {
                 var w = window.innerWidth;
                 var h = window.innerHeight;
                 //return [JSON.stringify({'height': h, 'width': w}),w,h];
@@ -76,14 +77,17 @@ class ReadyPlots():
             Output('hidden-div1', component_property='children'),
             # Output('ready_plots_wells_1', component_property='options'),
             # Output('ready_plots_wells_1', component_property='value'),
-            [Input('url', 'search')])  #, Input('url', 'searchdata')]) 
-        def display_page(search):
+            Input('url', 'search'),
+            State('user_id', 'data'),  #, Input('url', 'searchdata')]) 
+            
+            )
+        def display_page(search, uid):
             parsed = urllib.parse.urlparse(search)
             parsed_dict = urllib.parse.parse_qs(parsed.query)
 
             self.file_path = parsed_dict['path'][0]
     
-            self.refresh_data()
+            self.refresh_data(uid)
 
             return json.dumps('page_content')  # , self.wells, self.wells[0]['value']
         
@@ -94,8 +98,10 @@ class ReadyPlots():
             Input({'type': "ready-sidebar-button", "value": ALL}, "n_clicks"),
             Input('url', 'search'),
             Input(component_id='flow_slider', component_property='value'),
-            Input(component_id='channel_slider', component_property='value'))  
-        def update_wellplate_array(clicked_button, search, flow_filter, channel_filter):
+            Input(component_id='channel_slider', component_property='value'),
+            State('user_id', 'data'),
+            )  
+        def update_wellplate_array(clicked_button, search, flow_filter, channel_filter, uid):
             
             # fake_images = [[[[{} for y in range(Y_WELLS)] for x in range(X_WELLS)] for z in range(len(self.channel_marks))] for a in range(len(self.flow_marks))]
             fake_images = np.empty((len(self.channel_marks), len(self.flow_marks), X_WELLS, Y_WELLS), dtype=dict)
@@ -113,9 +119,10 @@ class ReadyPlots():
         Input(component_id='ready_plots_wellplate_1', component_property='selected_wells_y'),
         Input(component_id='flow_slider', component_property='value'),
         Input(component_id='channel_slider', component_property='value'), 
+        State('user_id', 'data'),
         prevent_initial_call=True,
         )
-        def set_graph(clicked_button, selected_wells_x, selected_wells_y, flow_filter, channel_filter):
+        def set_graph(clicked_button, selected_wells_x, selected_wells_y, flow_filter, channel_filter, uid):
             if hasattr(ctx.triggered_id, 'type'):
                 if ctx.triggered_id['type'] == 'ready-sidebar-button':
                     self.graph_type = ctx.triggered_id['value']
@@ -133,6 +140,8 @@ class ReadyPlots():
                 return fig
 
     def set_layout(self):
+        self.refresh_data()
+
         layout = dbc.Row([
         dbc.Col(width=1),
         dbc.Col(dbc.Container([
@@ -205,14 +214,18 @@ class ReadyPlots():
             #lists are None when no wells are selected
             return []
 
-    def refresh_data(self):
+    def refresh_data(self, uid=None):
+        
+        if not uid:
+            for i in self.app.layout.children: #TODO This will probably break spectactularly - fix!!!
+                if i.id == 'user_id':
+                    uid = i.data
 
-        if self.file_path != self.data_source.path:
-            self.data_source = Provider(self.file_path)
-            # self.data = self.data_source.data
-            self.rm = self.data_source.rm
-            self.wells = self.data_source.get_wells()
-            
+        self.data_source =self.provider_manager.get_provider_by_uid(uid)
+        self.provider_manager.get_provider_by_uid(uid).load_data()
+        # self.data = self.data_source.data
+        self.wells = self.data_source.get_wells() 
+
     def list_of_wells_to_regex(self, well_list: list):
         """Converts a list of well names into a valid regex expression to use in the analytics classes"""
         # if type(well_list) == str:

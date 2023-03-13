@@ -1,6 +1,6 @@
 from dash import html, no_update, ctx
 from dash import dcc, dash_table, register_page
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 from plotter.plotter import Plotter
 import numpy as np
 import pandas as pd
@@ -8,41 +8,46 @@ import os
 from datetime import datetime
 from urllib.request import pathname2url, quote
 from pathlib import Path
+from components.base_page import BasePage
+
 
 # Set the directory path
 # dir_path = "/mnt/nas/Decoding_Experiments/"
 dir_path = Path("/Volumes/bio_data/Decoding_Experiments")
 dir_path2 = Path("/Volumes/bio_data/Decoding_Experiments_Processed")
 
-# register_page(__name__)
+# register_page(__name__, path='/')
 
-class RunTable():
-    def __init__(self, app):
-        self.app = app
-
+class RunTable(BasePage):
+    def __init__(self, app, provider_manager):
+        super().__init__(app, provider_manager)
         if self.app is not None and hasattr(self, 'config_callbacks'):
             self.config_callbacks()
         
         self.data = self.get_run_data()
         
-    # def config_callbacks(self):
+    def config_callbacks(self):
         
-        # @self.app.callback(
-        # Output(component_id='run_table', component_property= 'figure'),
-        # Input(component_id='dropdown', component_property= 'value')
-        # )
-        # def set_graph(dropdown_value):
+        @self.app.callback(
+        Output(component_id='data_path', component_property= 'data'),
+        Input(component_id='table', component_property= 'active_cell'),
+        State('user_id', 'data'),
+        )
+        def update_path(active_cell, uid):
+            if active_cell:
+                row_id = active_cell['row_id']
+                # col_id = active_cell['column_id']
+                col_id = 'Path'
+                folder_path = self.data.loc[row_id,col_id]
 
-        #     self.plt = Plotter(data=self.data, index_dims=[])
+                self.provider_manager.get_provider_by_uid(uid).path = folder_path    
 
-        #     fig = self.plt.plot(dropdown_value, 'TABLE')
-
-        #     return fig
+                return folder_path
+            
+            else:
+                return ''
         
     def set_layout(self):
-        dropdown = dcc.Dropdown(id = 'dropdown',
-            options = [0,1,2],
-            value = 0),
         table = dash_table.DataTable(
         id="table",
         data=self.data.to_dict("records"),
@@ -97,6 +102,8 @@ class RunTable():
         # Create a pandas data frame from the folder information list
         folder_df = pd.DataFrame(folder_info)
         if "Date Created" in folder_df.columns:
-            folder_df = folder_df.sort_values('Date Created', ascending=False)
+            folder_df = folder_df.sort_values('Date Created', ascending=False, ignore_index=True)
+        
+        folder_df['id'] = folder_df.index
 
         return folder_df

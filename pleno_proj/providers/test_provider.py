@@ -12,9 +12,12 @@ class Provider:
         self.allowable_transforms = {
             ('nanoballs', 'hypercodes') : "AssignedHypercode"
         }
-        self.load_data()
+        if self.path:
+            self.load_data()
+        self.config = {'PanelInfo':{'panel_flow_count': 8}}
     
     def load_data(self):
+        #### TODO make this smarter - should reload already loaded data
         print('LOADING MORE DATA')
         if not self.path:
             self.path = '/Users/stephenk/pleno-droid/test/20221121_HYP1_KR_96plex_triplicate1_Ham_10x0.3'
@@ -48,9 +51,12 @@ class Provider:
         return default_value
 
     def get_wells(self):
-        wells = [{'label': i, 'value': i} for i in self.rm.list_wells()]
+        if hasattr(self, 'rm'):
+            wells = [{'label': i, 'value': i} for i in self.rm.list_wells()]
+        else:
+            wells = []
         return wells
-
+        
     def transform_dims(self, Dim1: str, Dim2: str, well_regex: str):
 
         transformer = self.rm.get_data(data_regex = self.allowable_transforms[(Dim1, Dim2)], index_dims = [Dim1], well_regex = well_regex) 

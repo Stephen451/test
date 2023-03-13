@@ -4,8 +4,9 @@ import  dash_bootstrap_components as dbc
 from dash import html, dcc
 from dash.development.base_component import Component
 import dash_mantine_components as dmc
-
+from components.base_page import BasePage
 from pleno_droid.analytics.plots import HypercodePlots, Position
+# dash.register_page(__name__)
 
 CONTENT_STYLE = {
     "transition": "margin-left .5s",
@@ -23,11 +24,11 @@ CONTENT_STYLE1 = {
     "background-color": "#f8f9fa",
 }
 
-class Sidebar2():
+class Sidebar2(BasePage):
 # the style arguments for the sidebar. We use position:fixed and a fixed width
 
-    def __init__(self, app):
-        self.app = app
+    def __init__(self, app, provider_manager):
+        super().__init__(app, provider_manager)
 
         if self.app is not None and hasattr(self, 'config_callbacks'):
             self.config_callbacks()
