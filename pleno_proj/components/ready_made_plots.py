@@ -10,7 +10,7 @@ import numpy as np
 import string
 import urllib
 from pdc.wellplate import wellplate
-from pleno_droid.analytics.plots import BasePlotter, HypercodePlots, Position, HypercodePerformance
+from pleno_droid.analytics.plots import BasePlotter, HypercodePlots, Position, HypercodePerformance, WellPlateSummaries
 from components.base_page import BasePage
 
 # register_page(__name__)
@@ -38,10 +38,12 @@ class ReadyPlots(BasePage):
         self.available_plots = {}
         # for ctx in self.reg_functions.keys():
         #     self.available_plots[ctx] = self.reg_functions[ctx]
-        for plot_class in [HypercodePerformance, HypercodePlots, Position]:
+        for plot_class in [HypercodePerformance, HypercodePlots, Position, WellPlateSummaries]:
             self.available_plots[plot_class] = plot_class.get_registered_functions()[plot_class.DISPLAY_NAME]
 
         self.graph_type = None
+        self.wellplate_type = None
+        self.curr_wellplate_arr = {}
 
         #NOTE ALL IDS SHOULD BE LINKED TO THE PAGE THEY"RE ON FOR CLARITY I.E. id=readyplots_table_1
         self.data_source = Provider(self.file_path)
@@ -95,26 +97,41 @@ class ReadyPlots(BasePage):
             Output('ready_plots_wellplate_1', component_property='wells_array'),
             Output(component_id='ready_plots_wellplate_1', component_property='flow_slider'),
             Output(component_id='ready_plots_wellplate_1', component_property='color_slider'),   
-            Input({'type': "ready-sidebar-button", "value": ALL}, "n_clicks"),
+            Input({'type': "ready-sidebar-wellplate-button", "value": ALL}, "n_clicks"),
             Input('url', 'search'),
             Input(component_id='flow_slider', component_property='value'),
             Input(component_id='channel_slider', component_property='value'),
             State('user_id', 'data'),
             )  
         def update_wellplate_array(clicked_button, search, flow_filter, channel_filter, uid):
-            
-            # fake_images = [[[[{} for y in range(Y_WELLS)] for x in range(X_WELLS)] for z in range(len(self.channel_marks))] for a in range(len(self.flow_marks))]
-            fake_images = np.empty((len(self.channel_marks), len(self.flow_marks), X_WELLS, Y_WELLS), dtype=dict)
-            fake_images[:] = [{}]
-            for well in self.wells:
-                well_ind = self.well_name_to_2d_ind(well['label'])
-                fake_images[:, :, well_ind[0], well_ind[1]] = {"text": "Avail", "color": 0}
 
-            return fake_images.tolist(), flow_filter, channel_filter
+            if hasattr(ctx.triggered_id, 'type'):
+                if ctx.triggered_id['type'] == 'ready-sidebar-wellplate-button':
+                    self.wellplate_type = ctx.triggered_id['value']
+            
+            if self.wellplate_type:
+                if self.wellplate_type in self.curr_wellplate_arr.keys():
+                    return self.curr_wellplate_arr[self.wellplate_type], flow_filter, channel_filter
+                
+                else:
+                    plot_func = self.find_plot_func(self.wellplate_type)
+                    wellplate_arr = plot_func(self.data_source.rm, well_regex=None, flow_filter=None, channel_filter=None)
+                    self.curr_wellplate_arr[self.wellplate_type] = wellplate_arr
+                    return wellplate_arr, flow_filter, channel_filter
+
+            else:            
+                # default value for wellplates when there's no plot
+                fake_images = np.empty((len(self.channel_marks), len(self.flow_marks), X_WELLS, Y_WELLS), dtype=dict)
+                fake_images[:] = [{}]
+                for well in self.wells:
+                    well_ind = self.well_name_to_2d_ind(well['label'])
+                    fake_images[:, :, well_ind[0], well_ind[1]] = {"text": "Avail", "color": 'green'}
+
+                return fake_images.tolist(), flow_filter, channel_filter
 
         @self.app.callback(
         Output(component_id='plotting', component_property= 'figure'),
-        Input({'type': "ready-sidebar-button", "value": ALL}, "n_clicks"),
+        Input({'type': "ready-sidebar-plot-button", "value": ALL}, "n_clicks"),
         Input(component_id='ready_plots_wellplate_1', component_property='selected_wells_x'),
         Input(component_id='ready_plots_wellplate_1', component_property='selected_wells_y'),
         Input(component_id='flow_slider', component_property='value'),
@@ -124,7 +141,7 @@ class ReadyPlots(BasePage):
         )
         def set_graph(clicked_button, selected_wells_x, selected_wells_y, flow_filter, channel_filter, uid):
             if hasattr(ctx.triggered_id, 'type'):
-                if ctx.triggered_id['type'] == 'ready-sidebar-button':
+                if ctx.triggered_id['type'] == 'ready-sidebar-plot-button':
                     self.graph_type = ctx.triggered_id['value']
 
             wells = self.selected_wells_to_well_name(selected_wells_x=selected_wells_x, selected_wells_y=selected_wells_y)
@@ -138,7 +155,7 @@ class ReadyPlots(BasePage):
                 fig.update_layout({'width': 700, 'height': 700})
                 
                 return fig
-
+            
     def set_layout(self):
         self.refresh_data()
 
@@ -231,7 +248,12 @@ class ReadyPlots(BasePage):
         # if type(well_list) == str:
         #     return well_list
         # else:
-        return r"(?=(" + "|".join(well_list) + r"))"
+        if well_list:
+            # valid regex for each well name in list
+            return r"(?=(" + "|".join(well_list) + r"))"
+        else:
+            # Allow every character (should just be every well, may cause issues in the future)
+            return r"[A-Za-z0-9_-]"
 
     def find_plot_func(self, label: str):
         for plot_class in self.available_plots.items():

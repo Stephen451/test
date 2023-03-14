@@ -33,31 +33,36 @@ class Sidebar2(BasePage):
         if self.app is not None and hasattr(self, 'config_callbacks'):
             self.config_callbacks()
 
-        self.available_plots = HypercodePlots.get_registered_functions()
+        self.available_plots = HypercodePlots.get_registered_functions(plot_type='Plot')
+        self.available_wellplates = HypercodePlots.get_registered_functions(plot_type='Wellplate')
 
     def build_accordion(self):
         accordion_items = []
         button_no = 0
-        for i, field in enumerate(self.available_plots.items()):
-                
-                button_list = []
-                for button in field[1]:
-                    button_list.append(
-                        dmc.Button(
-                        button['label'],
-                        id = {"type": f"ready-sidebar-button", "value": button['value']},
-                        fullWidth=True,
-                        variant='outline'
+        bin_no = 0
+        for button_name, plot_types in zip(['ready-sidebar-plot-button', 'ready-sidebar-wellplate-button'], 
+                              [self.available_plots, self.available_wellplates]):
+            for i, field in enumerate(plot_types.items()):
+                    
+                    button_list = []
+                    for button in field[1]:
+                        button_list.append(
+                            dmc.Button(
+                            button['label'],
+                            id = {"type": f"{button_name}", "value": button['value']},
+                            fullWidth=True,
+                            variant='outline'
+                            )
                         )
-                    )
-                    button_no += 1
+                        button_no += 1
 
-                item = dbc.AccordionItem(
-                    button_list,
-                    title=field[0],
-                    item_id=f"accordion_{i}"
-                    )
-                accordion_items.append(item)
+                    item = dbc.AccordionItem(
+                        button_list,
+                        title=field[0],
+                        item_id=f"accordion_{bin_no}"
+                        )
+                    accordion_items.append(item)
+                    bin_no += 1
         return accordion_items
 
     def set_layout(self, content: dash.html._component = html.H1("No Content Supplied")):
